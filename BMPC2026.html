@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#185FA5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>BMPC 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --blue:#185FA5;--blue-light:#E6F1FB;--blue-dark:#0C447C;--blue-text:#042C53;
+  --green-light:#EAF3DE;--green-text:#3B6D11;
+  --amber-light:#FAEEDA;--amber-text:#854F0B;
+  --coral-light:#FAECE7;--coral-text:#993C1D;
+  --gray:#5F5E5A;--gray-light:#F1EFE8;--gray-text:#444441;
+  --bg:#F7F8FA;--card:#fff;--border:#E2E2E2;
+  --text:#1A1A1A;--text2:#555;--text3:#888;
+  --nav-h:64px;--top-h:60px;
+}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text)}
+#app{display:flex;flex-direction:column;height:100vh}
+
+/* TOP BAR */
+#topbar{background:var(--blue);color:#fff;padding:0 16px;height:var(--top-h);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative;z-index:10}
+#topbar h1{font-size:17px;font-weight:600;line-height:1.2}
+#topbar p{font-size:11px;opacity:.75;margin-top:2px}
+#agenda-clear-btn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;display:none}
+
+/* SCROLL AREA */
+#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 12px calc(var(--nav-h)+12px)}
+
+/* BOTTOM NAV */
+#bottomnav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:#fff;border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:none;color:var(--text3);cursor:pointer;padding:8px 4px;font-size:10px;transition:color .15s;position:relative}
+.nav-btn.active{color:var(--blue)}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav-badge{position:absolute;top:6px;right:calc(50% - 18px);background:var(--blue);color:#fff;font-size:10px;font-weight:700;min-width:17px;height:17px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+/* DAY LABEL */
+.day-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:4px 0 10px}
+
+/* SPECIAL BLOCK */
+.special-block{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:8px}
+.special-block.event{background:#EAF3DE;border-color:#C0DD97}
+.special-time{font-size:11px;color:var(--text3);min-width:88px;font-weight:500}
+.special-label{font-size:13px;color:var(--text);font-weight:500}
+.special-block.event .special-label{color:var(--green-text)}
+
+/* PARALLEL LABEL */
+.parallel-label{font-size:11px;font-weight:700;color:var(--blue);letter-spacing:.3px;margin:14px 0 6px;padding:0 2px}
+
+/* SESSION CARD */
+.session-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.session-header{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.room-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0}
+.room-ist1{background:var(--blue-light);color:var(--blue-dark)}
+.room-ist2{background:var(--green-light);color:var(--green-text)}
+.room-yen{background:var(--amber-light);color:var(--amber-text)}
+.room-har{background:var(--coral-light);color:var(--coral-text)}
+.room-gen{background:var(--gray-light);color:var(--gray-text)}
+.session-meta{flex:1;min-width:0}
+.session-title{font-size:13px;font-weight:600;color:var(--text);line-height:1.35}
+.session-chairs{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.3}
+.session-header-right{display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:4px}
+.sel-count{background:var(--blue);color:#fff;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.chevron{width:18px;height:18px;stroke:var(--text3);flex-shrink:0;transition:transform .2s;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.chevron.open{transform:rotate(180deg)}
+
+/* TALKS */
+.talks-list{border-top:1px solid var(--border)}
+.talk-row{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;cursor:pointer;transition:background .1s;border-bottom:1px solid #f0f0f0;user-select:none;-webkit-user-select:none}
+.talk-row:last-child{border-bottom:none}
+.talk-row.selected{background:#EBF3FB}
+.talk-row:active{background:#f5f5f5}
+.talk-row.selected:active{background:#d8eaf7}
+.talk-time{font-size:11px;color:var(--text3);min-width:85px;padding-top:2px;line-height:1.3}
+.talk-body{flex:1;min-width:0}
+.talk-title{font-size:13px;line-height:1.4;color:var(--text)}
+.talk-row.selected .talk-title{color:var(--blue-dark)}
+.talk-author{font-size:11px;color:var(--text3);margin-top:3px}
+.talk-row.selected .talk-author{color:var(--blue);opacity:.7}
+.check-circle{width:22px;height:22px;flex-shrink:0;margin-top:1px}
+
+/* AGENDA */
+.agenda-empty{text-align:center;padding:60px 24px}
+.agenda-empty-icon{width:56px;height:56px;margin:0 auto 16px;stroke:var(--text3);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.4}
+.agenda-empty h2{font-size:16px;font-weight:600;color:var(--text2);margin-bottom:8px}
+.agenda-empty p{font-size:13px;color:var(--text3);line-height:1.5}
+.agenda-count{font-size:11px;color:var(--text3);margin:4px 0 12px}
+.agenda-day-group{margin-bottom:16px}
+.agenda-day-title{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;padding:0 2px}
+.agenda-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px}
+.agenda-card-body{flex:1;min-width:0}
+.agenda-pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+.agenda-pill{font-size:10px;padding:2px 8px;border-radius:20px}
+.agenda-title{font-size:13px;line-height:1.4;font-weight:500;color:var(--text)}
+.agenda-authors{font-size:11px;color:var(--text3);margin-top:3px}
+.remove-btn{background:none;border:1px solid #fcc;color:#c0392b;border-radius:8px;padding:4px 8px;font-size:11px;cursor:pointer;flex-shrink:0;margin-top:1px}
+
+/* SEARCH BAR */
+.search-wrap{position:relative;margin-bottom:12px}
+.search-wrap input{width:100%;padding:10px 14px 10px 36px;border:1px solid var(--border);border-radius:10px;font-size:14px;background:#fff;color:var(--text);outline:none}
+.search-wrap input:focus{border-color:var(--blue)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--text3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+
+@media(prefers-color-scheme:dark){
+  :root{--bg:#111;--card:#1e1e1e;--border:#333;--text:#f0f0f0;--text2:#bbb;--text3:#777}
+  #topbar{background:#0d3b6e}
+  #bottomnav{background:#1e1e1e;border-top-color:#333}
+  .special-block{background:#1e1e1e}
+  .special-block.event{background:#0d2a1a;border-color:#1e5c35}
+  .session-card{background:#1e1e1e}
+  .talk-row:active{background:#2a2a2a}
+  .talk-row.selected{background:#0d2a45}
+  .talk-row.selected:active{background:#0a2236}
+  .agenda-card{background:#1e1e1e}
+  .search-wrap input{background:#1e1e1e;color:#f0f0f0}
+  .room-ist1{background:#0d2a45;color:#85B7EB}
+  .room-ist2{background:#0d2a1a;color:#97C459}
+  .room-yen{background:#2a1f08;color:#EF9F27}
+  .room-har{background:#2a1008;color:#F0997B}
+  .room-gen{background:#2a2a2a;color:#B4B2A9}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <div>
+      <h1>XX BMPC 2026</h1>
+      <p>Istanbul &middot; 9&ndash;11 April 2026</p>
+    </div>
+    <button id="agenda-clear-btn" onclick="clearAgenda()">Clear all</button>
+  </div>
+  <div id="content"></div>
+  <nav id="bottomnav">
+    <button class="nav-btn active" onclick="setDay(0)" id="nav0">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Apr 9
+    </button>
+    <button class="nav-btn" onclick="setDay(1)" id="nav1">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Apr 10
+    </button>
+    <button class="nav-btn" onclick="setDay(2)" id="nav2">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Apr 11
+    </button>
+    <button class="nav-btn" onclick="setDay(3)" id="nav3">
+      <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      <span id="nav3-label">My Agenda</span>
+      <span class="nav-badge" id="agenda-badge" style="display:none"></span>
+    </button>
+  </nav>
+</div>
+
+<script>
+const SEL_KEY = 'bmpc_selected';
+let selected = new Set(JSON.parse(localStorage.getItem(SEL_KEY)||'[]'));
+let currentDay = 0;
+let expanded = new Set();
+
+function saveSelected(){localStorage.setItem(SEL_KEY,JSON.stringify([...selected]));}
+
+function roomClass(r){
+  if(r==='Istanbul-1') return 'room-ist1';
+  if(r==='Istanbul-2') return 'room-ist2';
+  if(r==='Yeniköy') return 'room-yen';
+  if(r==='Harem') return 'room-har';
+  return 'room-gen';
+}
+function roomPillStyle(r){
+  if(r==='Istanbul-1') return 'background:#E6F1FB;color:#0C447C';
+  if(r==='Istanbul-2') return 'background:#EAF3DE;color:#3B6D11';
+  if(r==='Yeniköy') return 'background:#FAEEDA;color:#854F0B';
+  if(r==='Harem') return 'background:#FAECE7;color:#993C1D';
+  return 'background:#F1EFE8;color:#444441';
+}
+
+function checkSVG(sel){
+  return sel
+    ? `<svg class="check-circle" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#185FA5" stroke="#185FA5" stroke-width="1.5"/><polyline points="7,12 10.5,15.5 17,8.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    : `<svg class="check-circle" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#ccc" stroke-width="1.5"/></svg>`;
+}
+
+function toggle(id){
+  if(selected.has(id)) selected.delete(id); else selected.add(id);
+  saveSelected();
+  updateBadge();
+  renderDay(currentDay);
+}
+
+function updateBadge(){
+  const b=document.getElementById('agenda-badge');
+  const n=document.getElementById('nav3-label');
+  if(selected.size>0){
+    b.style.display='flex'; b.textContent=selected.size;
+  } else {
+    b.style.display='none';
+  }
+  document.getElementById('agenda-clear-btn').style.display=
+    (currentDay===3 && selected.size>0)?'block':'none';
+}
+
+function clearAgenda(){
+  if(!confirm('Remove all saved sessions?')) return;
+  selected.clear(); saveSelected(); updateBadge(); renderDay(3);
+}
+
+function setDay(d){
+  currentDay=d;
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',i===d));
+  document.getElementById('agenda-clear-btn').style.display=
+    (d===3 && selected.size>0)?'block':'none';
+  document.getElementById('content').scrollTop=0;
+  renderDay(d);
+}
+
+function toggleExpand(key){
+  if(expanded.has(key)) expanded.delete(key); else expanded.add(key);
+  renderDay(currentDay);
+}
+
+const DAY_NAMES = ['Thursday, April 9','Friday, April 10','Saturday, April 11'];
+
+function mkT(day,id,time,title,authors,room,session){
+  return {day,id,time,title,authors:authors||'',room:room||'',session:session||''};
+}
+
+const DAYS = [
+  [
+    {type:'special',time:'09:00–12:00',label:'Registration'},
+    {type:'special',time:'12:00–13:30',label:'Lunch break'},
+    {type:'session',sessions:[{room:'Istanbul-1',title:'Opening Ceremony & Plenary Lectures',chairs:'Prof. Dr. Genc DEMI · Prof. Dr. Gülay BULUT',talks:[
+      mkT(0,'d0-1','13:30–14:00','Opening Ceremony','','Istanbul-1','Plenary'),
+      mkT(0,'d0-2','14:00–14:30','A review of the origins of hydrophobicity of solids and its measurement','Prof. Dr. Cyril O\'CONNOR (South Africa)','Istanbul-1','Plenary'),
+      mkT(0,'d0-3','14:30–15:00','Near-zero-waste processing routes for lithium and CRM recovery from hard-rock Li deposits','Prof. Dr. Lev O. FILIPPOV (France)','Istanbul-1','Plenary'),
+      mkT(0,'d0-4','15:00–15:30','Waste from some nonferrous base metals extraction as source of critical metals','Prof. Dr. Marinela PANAYOTOVA (Bulgaria)','Istanbul-1','Plenary'),
+    ]}]},
+    {type:'special',time:'15:30–16:00',label:'Coffee break'},
+    {type:'session',sessions:[{room:'Istanbul-1',title:'Plenary Lectures (continued)',chairs:'Prof. Dr. Mehmet Sabri ÇELİK · Prof. Dr. Feridun BOYLU',talks:[
+      mkT(0,'d0-5','16:00–16:30','Exploitation of natural resources: the economic and environmental impact','Prof. Dr. Nurten DEVA (Kosovo)','Istanbul-1','Plenary'),
+      mkT(0,'d0-6','16:30–17:00','Artificial intelligence (AI) in mineral processing','Prof. Dr. Saeed Chehreh CHELGANI (Sweden)','Istanbul-1','Plenary'),
+      mkT(0,'d0-7','17:00–17:30','Flotation 4.0: greener, smarter, sustainable','Prof. Dr. Przemyslaw B. KOWALCZUK (Norway)','Istanbul-1','Plenary'),
+      mkT(0,'d0-8','17:30–18:00','Integrating advanced separation techniques for sustainable recovery of critical metals from deep-sea ferromanganese crusts','Assoc. Prof. Dr. Gjergj DODBIBA (Japan)','Istanbul-1','Plenary'),
+    ]}]},
+    {type:'special',time:'19:00–21:00',label:'Welcome Cocktail',event:true},
+  ],
+  [
+    {type:'session',sessions:[{room:'Istanbul-1',title:'Morning Plenary',chairs:'Prof. Dr. Suna ATAK · Prof. Dr. Kimet FETAHU',talks:[
+      mkT(1,'d1-1','09:00–09:30','Ore silos and flow problems','Prof. Dr. Ayhan Ali SİRKECİ (Türkiye)','Istanbul-1','Plenary'),
+      mkT(1,'d1-2','09:30–10:00','Niobium (Nb) and tantalum (Ta) concentration','Prof. Dr. André Carlos SILVA (Brazil)','Istanbul-1','Plenary'),
+      mkT(1,'d1-3','10:00–10:30','Electrostatic separation after triboelectric charging in processing of primary raw materials','Prof. Dr. Helmut FLACHBERGER (Austria)','Istanbul-1','Plenary'),
+    ]}]},
+    {type:'special',time:'10:30–11:00',label:'Coffee break'},
+    {type:'session',sessions:[{room:'Istanbul-1',title:'Morning Plenary (continued)',chairs:'Prof. Dr. Gülhan ÖZBAYOĞLU · Prof. Dr. Vladko PANAYOTOV',talks:[
+      mkT(1,'d1-4','11:00–11:30','Effects of ultrasound on settling behavior of some critical minerals','Prof. Dr. Şafak Gökhan ÖZKAN (Türkiye)','Istanbul-1','Plenary'),
+      mkT(1,'d1-5','11:30–12:00','Bonding mechanisms in briquetting of recycled waste powders','Assoc. Prof. Dr. Jože KORTNIK (Slovenia)','Istanbul-1','Plenary'),
+      mkT(1,'d1-6','12:00–12:30','Effect of waste rock dilution on the flotation of main critical raw materials (CRM)','Assoc. Prof. Dr. Maria SINCHE GONZALEZ (Finland)','Istanbul-1','Plenary'),
+    ]}]},
+    {type:'special',time:'12:30–14:00',label:'Lunch break'},
+    {type:'parallel',time:'14:00–15:30',sessions:[
+      {room:'Istanbul-1',title:'Session 1 — Flotation & Surface Chemistry',chairs:'Prof. Dr. Neşet ACARKAN · Prof. Dr. Eugen Traista NIKOLAS',talks:[
+        mkT(1,'d1-s1-1','14:15–14:30','Green Emulsion Strategies for Graphite Flotation: Biosurfactant-Collector Interactions in LiB Black Mass Recycling','C. NZUMA; P.B. KOWALCZUK','Istanbul-1','Session 1'),
+        mkT(1,'d1-s1-2','14:30–14:45','Gas Dispersion Characteristics of the Concorde Cell','B. TUNÇ; T. MATTSSON; A. YANEZ; G. BULUT','Istanbul-1','Session 1'),
+        mkT(1,'d1-s1-3','14:45–15:00','Tonnex — A Contract-Driven Digital Ecosystem for Mineral Processing Operations','H.B. AKKÖSE; H.A. KUL','Istanbul-1','Session 1'),
+        mkT(1,'d1-s1-4','15:00–15:15','The Contribution of Roughness Parameter on Coagulation and Flocculation Characteristics of Fine Chromite','O. GÜVEN','Istanbul-1','Session 1'),
+        mkT(1,'d1-s1-5','15:15–15:30','Evaluating Cashew Nutshell Liquid as A Sustainable Collector for Cu-Mo Ore Flotation','J. PARIS et al.','Istanbul-1','Session 1'),
+      ]},
+      {room:'Istanbul-2',title:'Session 2 — Hydrometallurgy, Pyrometallurgy & Bio-Processing',chairs:'Prof. Dr. Sebahattin GÜRMEN · Prof. Dr. Muammer KAYA',talks:[
+        mkT(1,'d1-s2-1','14:00–14:15','Environmentally Friendly Leaching of Li-Ion Battery with Formic Acid: Process Optimization and Kinetic Insights','M. KAYA; H. DELAVANDANI','Istanbul-2','Session 2'),
+        mkT(1,'d1-s2-2','14:15–14:30','A Brief Historical Development of Refractories','A. EHSANI; I. EHSANI','Istanbul-2','Session 2'),
+        mkT(1,'d1-s2-3','14:30–14:45','A New Approach to Studying the Effects of Cyanide Dosage on Silver Metal Through A QCM Sensor','Ö. CANIEREN; C. KARAGÜZEL; O. ŞAHBAZ','Istanbul-2','Session 2'),
+        mkT(1,'d1-s2-4','14:45–15:00','Acid Leaching of Mechanically Activated Bentonite Clay for Aluminum Extraction','M. BİRİNCİ; K. ŞENTÜRK','Istanbul-2','Session 2'),
+        mkT(1,'d1-s2-5','15:00–15:15','Diagnostic Leaching of a Double Refractory Gold Ore','D.A. MSUMANGE; H. DEVECİ et al.','Istanbul-2','Session 2'),
+        mkT(1,'d1-s2-6','15:15–15:30','Electrowinning of Zinc from Ammoniacal Leach Solutions from Carbonate-Containing Smithsonite Ore','F. ÇAVUŞLU; A. EHSANI; I. EHSANI','Istanbul-2','Session 2'),
+      ]},
+      {room:'Yeniköy',title:'Session 3 — Physical Concentration Methods',chairs:'Prof. Dr. A. Ekrem YÜCE · Eng. Alexandru MIHAI',talks:[
+        mkT(1,'d1-s3-1','14:00–14:15','Cassiterite Fines Recovery from Jigging Tailings Using Shaking Tables','C.R. de A.G.e SILVA et al.','Yeniköy','Session 3'),
+        mkT(1,'d1-s3-2','14:15–14:30','Beneficiation of A High-Grade Lateritic Nickel Ore by Physical Separation Methods','Y.E. ÇAVDAR; H. BAŞTÜRKCÜ','Yeniköy','Session 3'),
+        mkT(1,'d1-s3-3','14:30–14:45','Comparison of Wet and Dry Magnetic Separation in The Beneficiation of Quartz Ores','A. ARAPOĞLU et al.','Yeniköy','Session 3'),
+        mkT(1,'d1-s3-4','14:45–15:00','Research on Recovery of Lead and Iron from Slag of a Lead-Acid Battery Recycling Plant','T. ULUCAN et al.','Yeniköy','Session 3'),
+        mkT(1,'d1-s3-5','15:00–15:15','Effect of Gravity Concentrator Performance on CIL Efficiency and Overall Gold Recovery','C.E. KARAHAN et al.','Yeniköy','Session 3'),
+        mkT(1,'d1-s3-6','15:15–15:30','Process Improvement of a Chromium Enrichment Plant','G. DEMI; S. BOCI','Yeniköy','Session 3'),
+      ]},
+      {room:'Harem',title:'Session 4 — Material Analysis & Mineral Characterization',chairs:'Prof. Dr. Halil İPEK · Dr. Habib BASHOLLI',talks:[
+        mkT(1,'d1-s4-1','14:00–14:15','Analysis of Accidents in Underground Mines in Albania','S. BARAMAJ; L. MOISIU et al.','Harem','Session 4'),
+        mkT(1,'d1-s4-2','14:15–14:30','Anthropogenic Raw Materials Processing Application Examples for Conservation of Natural Resources','J. FAITLI','Harem','Session 4'),
+        mkT(1,'d1-s4-3','14:30–14:45','Cement Making by Using the Geocementing Concept','H.A. KAHRAMAN','Harem','Session 4'),
+        mkT(1,'d1-s4-4','14:45–15:00','Characterization of Construction and Demolition Wastes for Valorization as Raw Materials','H. SİS et al.','Harem','Session 4'),
+        mkT(1,'d1-s4-5','15:00–15:15','Characterization of Manganoferrous (Fe-Mn) Oxide Ore from Türkiye-Şırnak Region','A.U. DENİZ; A. EHSANI et al.','Harem','Session 4'),
+        mkT(1,'d1-s4-6','15:15–15:30','Direct Recycling of Graphite Linking Mineral Processing with Nanostructural Restoration','E. TABAK et al.','Harem','Session 4'),
+      ]},
+    ]},
+    {type:'special',time:'15:30–16:00',label:'Coffee break'},
+    {type:'parallel',time:'16:00–17:45',sessions:[
+      {room:'Istanbul-1',title:'Session 5 — Hydrometallurgy, Pyrometallurgy & Bio-Processing',chairs:'Prof. Dr. Ferihan GÖKTEPE · Prof. Dr. Ljiljana TANKOSIC',talks:[
+        mkT(1,'d1-s5-1','16:00–16:15','Research on Factors Influencing High Fuel Consumption in Rotary Kilns','Z. BAJRAKTARI GASHI; M. KOVAÇI AZEMI','Istanbul-1','Session 5'),
+        mkT(1,'d1-s5-2','16:15–16:30','Flash Furnace Dust Processing Via Roasting and Acid Leaching Operation','M. AYCAN et al.','Istanbul-1','Session 5'),
+        mkT(1,'d1-s5-3','16:30–16:45','Investigation of The Beneficiation of Manganese Ore in The Karaburun Region by Leaching','Y.H. GÜRSOY; K.E. AKGÖÇMEN','Istanbul-1','Session 5'),
+        mkT(1,'d1-s5-4','16:45–17:00','ORP Modulation in HCl- And H₂SO₄-Based Leaching Systems Through Synergistic NaCl Effects','K. REZAEI; C. ACUNA','Istanbul-1','Session 5'),
+      ]},
+      {room:'Istanbul-2',title:'Session 6 — Flotation & Surface Chemistry',chairs:'Prof. Dr. Nacer PECI · Dr. K. Tahsin PEREK',talks:[
+        mkT(1,'d1-s6-1','16:00–16:15','The Effect of Water Type on Flotation Performance in Copper Slag Flotation','U. USLU et al.','Istanbul-2','Session 6'),
+        mkT(1,'d1-s6-2','16:15–16:30','A Comprehensive Pilot-Scale Study on Pneumatic Imhoflot Flotation at Çayeli Bakir','A. DEMİRCAN et al.','Istanbul-2','Session 6'),
+        mkT(1,'d1-s6-3','16:30–16:45','Optimization of Apatite Depression Using K-Na Tartrate/Al₂(SO₄)₃ In Phosphate Slimes','D. NETTOUR et al.','Istanbul-2','Session 6'),
+        mkT(1,'d1-s6-4','16:45–17:00','The Importance of Zeta Potential Measurement in The Flotation of Diaspora and Calcium Minerals','Y.H. GÜRSOY et al.','Istanbul-2','Session 6'),
+      ]},
+      {room:'Yeniköy',title:'Session 7 — Modeling, Simulation, Control & Automation',chairs:'Prof. Dr. İbrahim ALP · Eng. Davor TANOWSKI',talks:[
+        mkT(1,'d1-s7-1','16:00–16:15','Modelling of Multi Gravity Separator (MGS) For Fine Lignite Cleaning by CCD Method','D. OZ AKSOY; S. KOCA; H. KOCA','Yeniköy','Session 7'),
+        mkT(1,'d1-s7-2','16:15–16:30','Application of RSM To the Enrichment of Espey Colemanite Wastes by Microwave','A. KAHVECİOĞLU et al.','Yeniköy','Session 7'),
+        mkT(1,'d1-s7-3','16:30–16:45','Realizing the Smart Grinding Mill: Real-Time Lifter Bar Wear Monitoring and Predictive Maintenance','A. ALTUNCU et al.','Yeniköy','Session 7'),
+        mkT(1,'d1-s7-4','16:45–17:00','Application of Data Analytics in Mineral Processing Towards Digital Performance Prediction','O.M. GÜRKAN; H. BAŞTÜRKCÜ','Yeniköy','Session 7'),
+        mkT(1,'d1-s7-5','17:00–17:15','Physical and Physicochemical Process Simulation for Beneficiation of Lithium from Nepheline Syenite','Z. ÜÇERLER ÇAMUR et al.','Yeniköy','Session 7'),
+        mkT(1,'d1-s7-6','17:15–17:30','Digital Approaches to Sustainable Mineral Processing: Matlab-Based Simulation of Sensor-Assisted Ore Sorting','A.C. TANRIKULU; B. BENLİ','Yeniköy','Session 7'),
+      ]},
+      {room:'Harem',title:'Session 8 — Management of Mineral Processing Tailings',chairs:'Prof. Dr. İlgin KURŞUN ÜNVER · M.Sc. Ekita FETAHU TOSKA',talks:[
+        mkT(1,'d1-s8-1','16:00–16:15','Evaluation of Mineral Processing and Hydrometallurgical Plant Wastes with Case Studies from Türkiye','G. BULUT et al.','Harem','Session 8'),
+        mkT(1,'d1-s8-2','16:15–16:30','Evaluation of Waste and By-Products from Zonguldak Hard Coal Basin within the Zero-Waste Approach','M. BİLEN et al.','Harem','Session 8'),
+        mkT(1,'d1-s8-3','16:30–16:45','Mining Waste and Critical Raw Materials Recovery from Kurbnesh Copper Tailings, Albania','S. BARAMAJ et al.','Harem','Session 8'),
+        mkT(1,'d1-s8-4','16:45–17:00','Production of Magnetite Concentrate from Copper Concentrator Plant Tailings','A. KÖLE et al.','Harem','Session 8'),
+        mkT(1,'d1-s8-5','17:15–17:30','Spatial Distribution of Selected Variables in Artana Tailings for Sustainable Management','N. PECI et al.','Harem','Session 8'),
+        mkT(1,'d1-s8-6','17:30–17:45','Soil Contamination from The Impact of The PIM Industrial Landfill, Mitrovica','E. IDRIZI','Harem','Session 8'),
+      ]},
+    ]},
+    {type:'special',time:'20:00–24:00',label:'Gala Dinner',event:true},
+  ],
+  [
+    {type:'parallel',time:'09:00–10:30',sessions:[
+      {room:'Istanbul-1',title:'Session 9 — Flotation & Surface Chemistry',chairs:'Prof. Dr. Nedzad ALIC · Prof. Dr. Orhan ÖZDEMİR',talks:[
+        mkT(2,'d2-s9-1','09:00–09:15','Influence of Glycol and Alcohol Type Frother On Critical Coalescence Concentration and Bubble Size','G. GÜVEN et al.','Istanbul-1','Session 9'),
+        mkT(2,'d2-s9-2','09:15–09:30','Investigation on Lead Depression in Antimony Flotation Circuit','B. YÜCEL; İ. GÖKTAŞ','Istanbul-1','Session 9'),
+        mkT(2,'d2-s9-3','09:30–09:45','Recent Advances in Flotation Technologies for Coarse and Fine Particle Recovery','C. GÜRKAN; H. BAŞTÜRKCÜ','Istanbul-1','Session 9'),
+        mkT(2,'d2-s9-4','09:45–10:00','Sphalerite Flotation Using a New Chelating Collector N-Hexylaminoethanethiol','B. BENAISSA et al.','Istanbul-1','Session 9'),
+        mkT(2,'d2-s9-5','10:00–10:15','Sulfide Gold Ore Flotation Rich in Fine Particles','E.M.S. SILVA et al.','Istanbul-1','Session 9'),
+        mkT(2,'d2-s9-6','10:15–10:30','A Sustainable Approach of Flotation-Based Recycling of Virgin and Post-Consumer Multiple Plastics','C.C. BAKIR et al.','Istanbul-1','Session 9'),
+      ]},
+      {room:'Istanbul-2',title:'Session 10 — Plant & Process Design and Operating Practice',chairs:'Prof. Dr. Mehmet CANBAZOĞLU · Asst. Prof. Dr. Yusuf Enes PURAL',talks:[
+        mkT(2,'d2-s10-1','09:00–09:15','Application of New Technologies for Beneficiation of Albanian Chromite Ores','K. FETAHU; B. KOCI; E. TOSKA','Istanbul-2','Session 10'),
+        mkT(2,'d2-s10-2','09:15–09:30','Bulk Solids Handling: the Overlooked Driver of Plant Performance','E. KAYA','Istanbul-2','Session 10'),
+        mkT(2,'d2-s10-3','09:30–09:45','Digital Prototyping and Sequential Assembly Simulation for A Raymond Mill Installation','D. DEMİROK; A. TANRIKULU','Istanbul-2','Session 10'),
+        mkT(2,'d2-s10-4','09:45–10:00','Reagent Optimization for Cost-Effective and Sustainable Gold Processing at Tarkwa Mine, Ghana','M. MAWUENYEGA et al.','Istanbul-2','Session 10'),
+        mkT(2,'d2-s10-5','10:00–10:15','Upgrading Ultra-Low-Quality Lignite Through Waste Heat-Driven Fluidized Bed Drying','H. BILIRGEN; F. BILIRGEN','Istanbul-2','Session 10'),
+        mkT(2,'d2-s10-6','10:15–10:30','Validation of Process Simulation Through Locked Cycle Test and Pilot for Nordic Talc Plant Design','E. ÖZDEMIR et al.','Istanbul-2','Session 10'),
+      ]},
+      {room:'Yeniköy',title:'Session 11 — Processing of Industrial Minerals',chairs:'Prof. Dr. Fırat BURAT · Asst. Prof. Dr. Beste AYDIN',talks:[
+        mkT(2,'d2-s11-1','09:00–09:15','A Hybrid Microwave-Thermal Method to Optimize the Grinding of Moist Clay Minerals','D. DEMİROK','Yeniköy','Session 11'),
+        mkT(2,'d2-s11-2','09:15–09:30','A Review on the Recovery of Rare Earth Element (REE) Resources of Türkiye','İ. KURŞUN et al.','Yeniköy','Session 11'),
+        mkT(2,'d2-s11-3','09:30–09:45','Enriched Huntite as a Green Flame Retardant: Thermal and Physical Behaviors in Polyurethane Matrices','T. TÜRK; B. BENLİ; M.O. KANGAL','Yeniköy','Session 11'),
+        mkT(2,'d2-s11-4','09:45–10:00','Structural and Morphological Roles of Clay-Based Catalysts for Green Hydrogen Generation','H. HAZAR et al.','Yeniköy','Session 11'),
+        mkT(2,'d2-s11-5','10:00–10:15','Synthesis of Pseudobrookite Powder Via Oxidative Calcination of Ilmenite for Photocatalytic Applications','Y. SORKHE et al.','Yeniköy','Session 11'),
+      ]},
+      {room:'Harem',title:'Session 12 — Geological Studies',chairs:'Prof. Dr. Haldun KURAMA · Dr. Merve SÜTÇÜ',talks:[
+        mkT(2,'d2-s12-1','09:00–09:15','Assessment and Calculation of Hydrogeological Parameters of the Aquifer in Southern Kosovo Coal Basin','S. AVDULLAHI','Harem','Session 12'),
+        mkT(2,'d2-s12-2','09:15–09:30','Detection of Ore Deposits using Image Processing Techniques, West of Elazig (Turkey)','I.S. TOSUN et al.','Harem','Session 12'),
+        mkT(2,'d2-s12-3','09:30–09:45','Geological and Mineralogical Characteristics of High-Grade Polymetallic Ores in Mirdita, Albania','A. DACI et al.','Harem','Session 12'),
+        mkT(2,'d2-s12-4','09:45–10:00','Image Processing Studies in The Akdag Region (Elazig, Turkey)','M. URAL; M. EGRI','Harem','Session 12'),
+        mkT(2,'d2-s12-5','10:00–10:15','Imaging Analysis of Ore Occurrences Within Upper Cretaceous Lava Sequences (Kockale, Elazig-Turkey)','M. URAL; M. EGRI','Harem','Session 12'),
+        mkT(2,'d2-s12-6','10:15–10:30','Mineralogical Controls and Beneficiation Assessment of Vanadium','N.M. SUTCU et al.','Harem','Session 12'),
+      ]},
+    ]},
+    {type:'special',time:'10:30–11:00',label:'Coffee break'},
+    {type:'parallel',time:'11:00–12:15',sessions:[
+      {room:'Istanbul-1',title:'Session 13 — Coal Processing, Briquetting & Dewatering',chairs:'Prof. Dr. Ihsan TOROGLU · Assoc. Prof. Dr. Mustafa OZER',talks:[
+        mkT(2,'d2-s13-1','11:00–11:15','Evaluation of Washability Characteristics of Zonguldak Coal Seams: Catalagzi Coal Preparation Plant','E. MUNISHI et al.','Istanbul-1','Session 13'),
+        mkT(2,'d2-s13-2','11:15–11:30','Extraction of Tar from Low-Rank Turkish Coals by Pyrolysis for Carbon Fiber Production','E.E. METE et al.','Istanbul-1','Session 13'),
+        mkT(2,'d2-s13-3','11:30–11:45','Effect of Flocculant Dosage and Water Type on Sedimentation Behavior of Sulfide Iron Ore Tailings','A. CIPER et al.','Istanbul-1','Session 13'),
+        mkT(2,'d2-s13-4','11:45–12:00','Creating Value from Water in Mining','R. SALMIMIES; N. HARJULA; E. STRAND','Istanbul-1','Session 13'),
+        mkT(2,'d2-s13-5','12:00–12:15','Value-Added Conversion of Zonguldak Hard Coals: Integrated Approaches for Injection Coal and Activated Carbon','F. ALP et al.','Istanbul-1','Session 13'),
+      ]},
+      {room:'Istanbul-2',title:'Session 14 — Hydrometallurgy, Pyrometallurgy & Bio-Processing',chairs:'Prof. Dr. Volkan BOZKURT · Asst. Prof. Dr. Esra BASTURKCU',talks:[
+        mkT(2,'d2-s14-1','11:00–11:15','Evaluation of Alternative Sulfation Agents for Rare Earth Element Pretreatment','E. BASTURKCU','Istanbul-2','Session 14'),
+        mkT(2,'d2-s14-2','11:15–11:30','Selective Extraction of La, Nd and Pr from Synthetic Leach Solution Using PC-88A-TBP System','E. BASTURKCU et al.','Istanbul-2','Session 14'),
+        mkT(2,'d2-s14-3','11:30–11:45','Stripping Precipitation of Calcium Vanadates from Organic V(V) Extracts','M.G. SANCHEZ-LOREDO et al.','Istanbul-2','Session 14'),
+        mkT(2,'d2-s14-4','11:45–12:00','The Leaching Kinetics of High-Grade Zinc Silicate Ore in Sulfuric Acid','M. NAZERI; C. ACUNA et al.','Istanbul-2','Session 14'),
+        mkT(2,'d2-s14-5','12:00–12:15','Natural Soda Ash Production Through In-Situ Leaching: Operational Framework from Kazan Soda Plant','E. KUMRUOGLU et al.','Istanbul-2','Session 14'),
+      ]},
+      {room:'Yeniköy',title:'Session 15 — Material Analysis, Mineral Characterization & Comminution',chairs:'Prof. Dr. Sait KIZGUT · Assoc. Prof. Dr. Birgül BENLI',talks:[
+        mkT(2,'d2-s15-1','11:00–11:15','Process Mineralogy Insights into Beneficiation of Rare Earth Carbonatite Ores','E. AKYILDIZ et al.','Yeniköy','Session 15'),
+        mkT(2,'d2-s15-2','11:15–11:30','Statistical and Geostatistical Analysis of Technology-Critical Elements in Trepca Mine','B. SINANI et al.','Yeniköy','Session 15'),
+        mkT(2,'d2-s15-3','11:30–11:45','Structural Data and Chromite Enrichment Characteristics in The Ultrabasic Massif of Luboten, Kosovo','E. PLLANA et al.','Yeniköy','Session 15'),
+        mkT(2,'d2-s15-4','11:45–12:00','Investigation of Ore Abrasivity Index Effects on Ball Wear in Wet Ball Milling with Lab Scale Tests','Y.K. YALCIN et al.','Yeniköy','Session 15'),
+        mkT(2,'d2-s15-5','12:00–12:15','Dry Beneficiation of Mineral Ores Using Tribo-Electrostatic Belt Separation','A. GUPTA; T. NEWMAN; F. HRACH','Yeniköy','Session 15'),
+      ]},
+      {room:'Harem',title:'Session 16 — Miscellaneous',chairs:'Assoc. Prof. Dr. Huseyin BASTURKCU · Dr. Zeynep UCERLER-CAMUR',talks:[
+        mkT(2,'d2-s16-1','11:00–11:15','Alignment of Albanian Geo-Mining Legislation with Legislation of Balkan Countries and the EU','E. TOSKA et al.','Harem','Session 16'),
+        mkT(2,'d2-s16-2','11:15–11:30','Analysis of Reuse Potential of Solid Wastes after HCl Leaching Using Microscope Images and Machine Learning','T.D. TOMBAL KARA et al.','Harem','Session 16'),
+        mkT(2,'d2-s16-3','11:30–11:45','The Effects of Chemical Structure of Flocculants on Flocculation in Murgul Flotation Plant Tailings','Y. SEN; Z. GOLLER; G. BULUT','Harem','Session 16'),
+        mkT(2,'d2-s16-4','11:45–12:00','Recovery of Metallic Values from Copper Slags','F. ARSLAN; G. BULUT; C. ARSLAN','Harem','Session 16'),
+      ]},
+    ]},
+    {type:'special',time:'12:30–14:00',label:'Lunch break'},
+    {type:'special',time:'14:00–15:00',label:'Closing Ceremony',event:true},
+  ],
+];
+
+function renderDay(d){
+  const el=document.getElementById('content');
+  if(d===3){renderAgenda(el);return;}
+  const items=DAYS[d];
+  let h=`<div class="day-label">${DAY_NAMES[d]}</div>`;
+  for(const item of items){
+    if(item.type==='special'){
+      h+=`<div class="special-block${item.event?' event':''}"><span class="special-time">${item.time||''}</span><span class="special-label">${item.label}</span></div>`;
+    } else if(item.type==='session'){
+      for(const s of item.sessions) h+=renderSession(s,d);
+    } else if(item.type==='parallel'){
+      h+=`<div class="parallel-label">Parallel sessions &middot; ${item.time}</div>`;
+      for(const s of item.sessions) h+=renderSession(s,d);
+    }
+  }
+  el.innerHTML=h;
+}
+
+function renderSession(s,d){
+  const key=`${d}_${s.room}_${s.title}`;
+  const open=expanded.has(key);
+  const selCount=s.talks.filter(t=>selected.has(t.id)).length;
+  let h=`<div class="session-card">`;
+  h+=`<div class="session-header" onclick="toggleExpand('${key.replace(/'/g,"\\'")}')">`;
+  h+=`<div><span class="room-badge ${roomClass(s.room)}">${s.room}</span></div>`;
+  h+=`<div class="session-meta"><div class="session-title">${s.title}</div>`;
+  if(s.chairs) h+=`<div class="session-chairs">${s.chairs}</div>`;
+  h+=`</div><div class="session-header-right">`;
+  if(selCount>0) h+=`<span class="sel-count">${selCount}</span>`;
+  h+=`<svg class="chevron${open?' open':''}" viewBox="0 0 24 24"><polyline points="6,9 12,15 18,9"/></svg>`;
+  h+=`</div></div>`;
+  if(open){
+    h+=`<div class="talks-list">`;
+    for(const t of s.talks){
+      const sel=selected.has(t.id);
+      h+=`<div class="talk-row${sel?' selected':''}" onclick="toggle('${t.id}')">`;
+      h+=`<span class="talk-time">${t.time}</span>`;
+      h+=`<div class="talk-body"><div class="talk-title">${t.title}</div>`;
+      if(t.authors) h+=`<div class="talk-author">${t.authors}</div>`;
+      h+=`</div>${checkSVG(sel)}</div>`;
+    }
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+  return h;
+}
+
+function getAllTalks(){
+  const all=[];
+  for(const day of DAYS) for(const item of day){
+    const sessions=item.sessions||[];
+    for(const s of sessions) for(const t of s.talks) all.push(t);
+  }
+  return all;
+}
+
+function renderAgenda(el){
+  const all=getAllTalks();
+  const saved=all.filter(t=>selected.has(t.id)).sort((a,b)=>a.day-b.day||a.time.localeCompare(b.time));
+  if(saved.length===0){
+    el.innerHTML=`<div class="agenda-empty">
+      <svg class="agenda-empty-icon" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      <h2>No sessions saved</h2>
+      <p>Browse the schedule and tap any talk to save it to your agenda.</p>
+    </div>`;
+    return;
+  }
+  let h=`<div class="agenda-count">${saved.length} session${saved.length!==1?'s':''} saved</div>`;
+  let lastDay=-1;
+  for(const t of saved){
+    if(t.day!==lastDay){
+      if(lastDay>=0) h+=`</div>`;
+      h+=`<div class="agenda-day-group"><div class="agenda-day-title">${DAY_NAMES[t.day]}</div>`;
+      lastDay=t.day;
+    }
+    const ps=roomPillStyle(t.room);
+    h+=`<div class="agenda-card">`;
+    h+=`<div class="agenda-card-body">`;
+    h+=`<div class="agenda-pills">`;
+    h+=`<span class="agenda-pill" style="${ps}">${t.time}</span>`;
+    if(t.room) h+=`<span class="agenda-pill" style="${ps}">${t.room}</span>`;
+    h+=`</div>`;
+    h+=`<div class="agenda-title">${t.title}</div>`;
+    if(t.authors) h+=`<div class="agenda-authors">${t.authors}</div>`;
+    h+=`</div>`;
+    h+=`<button class="remove-btn" onclick="toggle('${t.id}')">Remove</button>`;
+    h+=`</div>`;
+  }
+  if(lastDay>=0) h+=`</div>`;
+  el.innerHTML=h;
+}
+
+updateBadge();
+renderDay(0);
+</script>
+</body>
+</html>
