@@ -221,6 +221,19 @@ function setDay(d){
 function toggleExpand(key){
   if(expanded.has(key)) expanded.delete(key); else expanded.add(key);
   renderDay(currentDay);
+  if(expanded.has(key)){
+    setTimeout(()=>{
+      const cards=document.querySelectorAll('.session-card');
+      for(const c of cards){
+        if(c.querySelector('.talks-list')){
+          const rect=c.getBoundingClientRect();
+          if(rect.top>=0 && rect.top<window.innerHeight){
+            c.scrollIntoView({behavior:'smooth',block:'nearest'});
+          }
+        }
+      }
+    },50);
+  }
 }
 
 const DAY_NAMES = ['Thursday, April 9','Friday, April 10','Saturday, April 11'];
